@@ -61,7 +61,7 @@ sudo make install
 cd ..
 
 echo "=== 1. Start Build Debootstrap (First Stage) ==="
-PACKAGES="libc6,libstdc++6,libgcc-s1,libssl3t64,zlib1g,liblzma5,libzstd1,libbz2-1.0,libcrypt1,perl-base,bash"
+PACKAGES="libc6,libstdc++6,libgcc-s1,libssl3t64,zlib1g,liblzma5,libzstd1,libbz2-1.0,libcrypt1,perl-base,bash,libgcrypt20,libgpg-error0,liblz4-1,libp11-kit0,libidn2-0,libunistring5,libtasn1-6,libgnutls30t64"
 sudo mkdir -p "$TARGET_DIR"
 
 echo "Running debootstrap (Stage 1)..."
