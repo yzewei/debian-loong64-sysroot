@@ -35,13 +35,16 @@ sudo make install
 cd ..
 
 echo "=== 1. Start Build Debootstrap (First Stage) ==="
-# 定义包列表
-PACKAGES="libc6,libstdc++6,libgcc-s1,libssl3t64,zlib1g,liblzma5,libzstd1t64,libbz2-1.0,libcrypt1t64,perl-base"
+# === 关键修改点 ===
+# libssl3t64 -> 必须带 t64 (验证通过)
+# libzstd1t64 -> 改回 libzstd1 (仓库里没改名)
+# libcrypt1t64 -> 改回 libcrypt1 (仓库里没改名)
+PACKAGES="libc6,libstdc++6,libgcc-s1,libssl3t64,zlib1g,liblzma5,libzstd1,libbz2-1.0,libcrypt1,perl-base"
 
 sudo mkdir -p "$TARGET_DIR"
 
 echo "Running debootstrap..."
-# === 修改点：将命令合并为一行，防止换行符引发的语法错误 ===
+# 单行命令，确保不出错
 sudo debootstrap --arch="$ARCH" --foreign --keyring=/usr/share/keyrings/debian-ports-archive-keyring.gpg --include="$PACKAGES" "$DISTRO" "$TARGET_DIR" "$MIRROR"
 
 echo "=== 2. Config (Second Stage) ==="
