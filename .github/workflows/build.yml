@@ -1,0 +1,55 @@
+name: Build & Release Sysroot
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: loongarch64
+
+      - name: Run Build Script
+        # 运行你仓库里的脚本
+        run: |
+          chmod +x scripts/build.sh
+
+      # 获取构建脚本生成的具体文件名 (防止文件名变动导致找不到)
+      - name: Get Filename
+        id: file_name
+        run: |
+          FILE=$(ls *.tar.gz | head -n 1)
+          echo "artifact_path=$FILE" >> $GITHUB_ENV
+          echo "Found artifact: $FILE"
+
+      # --- 分支逻辑：如果是手动触发 (非 Tag)，只上传 Artifact 供下载测试 ---
+      - name: Upload Artifact (Manual Build)
+        if: (!startsWith(github.ref, 'refs/tags/'))
+        uses: actions/upload-artifact@v4
+        with:
+          name: loongarch-sysroot-debug
+          path: ${{ env.artifact_path }}
+          retention-days: 7
+
+      - name: Create Release and Upload Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: LoongArch Sysroot ${{ github.ref_name }}
+          files: ${{ env.artifact_path }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
