@@ -9,7 +9,14 @@ MIRROR="http://ftp.ports.debian.org/debian-ports"
 
 echo "=== 0. Prepare Build Env ==="
 sudo apt-get update
-sudo apt-get install -y qemu-user-static debian-ports-archive-keyring wget
+# 注意：这里去掉了 debian-ports-archive-keyring，因为 apt 源里的太老了
+sudo apt-get install -y qemu-user-static wget
+
+echo ">>> Fixing Keyring for Debian Ports 2025..."
+# 手动下载最新的 keyring 包 (包含 key id C6894E6BB25B9C99)
+wget http://ftp.debian.org/debian/pool/main/d/debian-ports-archive-keyring/debian-ports-archive-keyring_2024.01.05_all.deb
+sudo dpkg -i debian-ports-archive-keyring_2024.01.05_all.deb
+rm debian-ports-archive-keyring_2024.01.05_all.deb
 
 echo "Downloading latest debootstrap..."
 rm -rf debootstrap-master
@@ -20,13 +27,12 @@ sudo make install
 cd ..
 
 echo "=== 1. Start Build Debootstrap (First Stage) ==="
-# 注意：Debian Sid 进行了 t64 过渡，包名发生了变化 (例如 libssl3 -> libssl3t64)
-# 我们这里列出 LoongArch Sid 当前最新的包名
+# Box64 运行环境所需的库 (注意 t64 后缀)
 PACKAGES="libc6,libstdc++6,libgcc-s1,libssl3t64,zlib1g,liblzma5,libzstd1t64,libbz2-1.0,libcrypt1t64,perl-base"
 
 sudo mkdir -p "$TARGET_DIR"
 
-# 增加 --keyring 参数消除签名警告
+# 这里明确指定 keyring 文件，现在它是最新的了
 sudo debootstrap \
     --arch="$ARCH" \
     --foreign \
