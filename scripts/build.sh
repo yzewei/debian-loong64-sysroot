@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Support alternate sysroot builders.
+SYSROOT_FLAVOR="${SYSROOT_FLAVOR:-debian}"
+if [ "$SYSROOT_FLAVOR" = "ocs" ]; then
+    exec "$(dirname "$0")/build_ocs.sh"
+fi
+
 # ================= Configuration =================
 ARCH="loong64"
 DISTRO="sid"
@@ -231,6 +237,44 @@ if [ ! -f "$LIB_DIR/libgnutls.so" ]; then
 fi
 
 if [ -f "scripts/fix_links.py" ]; then sudo python3 scripts/fix_links.py "$TARGET_DIR"; fi
+
+# ==========================================
+# 3.5 Normalize Debian libs into lib64
+# ==========================================
+echo "Normalizing Debian libs into lib64..."
+sudo mkdir -p "$TARGET_DIR/lib64" "$TARGET_DIR/usr/lib64"
+
+LINK_SRC_DIRS=(
+    "$TARGET_DIR/lib/loongarch64-linux-gnu"
+    "$TARGET_DIR/usr/lib/loongarch64-linux-gnu"
+)
+
+for src_dir in "${LINK_SRC_DIRS[@]}"; do
+    if [ -d "$src_dir" ]; then
+        while IFS= read -r -d '' sofile; do
+            base="$(basename "$sofile")"
+            if [ ! -e "$TARGET_DIR/lib64/$base" ]; then
+                sudo ln -sf "${sofile#$TARGET_DIR/}" "$TARGET_DIR/lib64/$base"
+            fi
+            if [ ! -e "$TARGET_DIR/usr/lib64/$base" ]; then
+                sudo ln -sf "${sofile#$TARGET_DIR/}" "$TARGET_DIR/usr/lib64/$base"
+            fi
+        done < <(find "$src_dir" -maxdepth 1 -type f -name "*.so*" -print0)
+    fi
+done
+
+# Ensure loader is reachable from /lib64 if it lives in debian multiarch dir.
+if [ ! -e "$TARGET_DIR/lib64/ld-linux-loongarch-lp64d.so.1" ]; then
+    for candidate in \
+        "$TARGET_DIR/lib/loongarch64-linux-gnu/ld-linux-loongarch-lp64d.so.1" \
+        "$TARGET_DIR/usr/lib/loongarch64-linux-gnu/ld-linux-loongarch-lp64d.so.1"; do
+        if [ -f "$candidate" ]; then
+            sudo ln -sf "${candidate#$TARGET_DIR/}" "$TARGET_DIR/lib64/ld-linux-loongarch-lp64d.so.1"
+            break
+        fi
+    done
+fi
+
 
 # ==========================================
 # 4. Package Runtime Libs

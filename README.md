@@ -2,9 +2,9 @@
 
 [![Build & Release Sysroot](https://github.com/yzewei/debian-loong64-sysroot/actions/workflows/build.yml/badge.svg)](https://github.com/yzewei/debian-loong64-sysroot/actions/workflows/build.yml)
 
-**Automated CI builder for a minimal, clean Debian LoongArch (loong64) sysroot.**
+**Automated CI builder for minimal, clean LoongArch sysroots (Debian and OpenCloudOS Stream).**
 
-This project uses GitHub Actions, QEMU, and `debootstrap` to build a pristine LoongArch system root filesystem. It is specifically optimized for:
+This project uses GitHub Actions, QEMU, `debootstrap`, and `dnf` to build pristine LoongArch system root filesystems. It is specifically optimized for:
 * **Box64 Emulation**: Providing native libraries to x86/x64 containers running on LoongArch hosts.
 * **Cross-Compilation**: Linking against loong64 libraries from x86 machines.
 
@@ -17,7 +17,8 @@ Using the host's `/lib64` folder directly is problematic because:
 3.  **Reproducibility**: Different LoongArch machines have different library versions.
 
 **This builder solves these problems by:**
-1.  Building a clean **Debian Trixie (13)** base.
+1.  Building a clean **Debian** base (sid by default).
+2.  Building a clean **OpenCloudOS Stream** base (23 by default).
 2.  **Auto-fixing symlinks**: Converting all absolute symlinks to relative ones (e.g., `../../lib/libc.so.6`), so the sysroot works perfectly regardless of where it is
 
 🏗 How it Works (CI Pipeline)
@@ -39,9 +40,16 @@ If you want to build this locally on a Linux machine (x86 or LoongArch):
 # Install dependencies
 sudo apt-get install -y qemu-user-static debootstrap debian-ports-archive-keyring
 
-# Run the build script
+# Run the Debian build script (default)
 chmod +x scripts/build.sh
 ./scripts/build.sh
+
+# Run the OpenCloudOS Stream build
+chmod +x scripts/build_ocs.sh
+./scripts/build_ocs.sh
+
+# Or via the unified entry point
+SYSROOT_FLAVOR=ocs ./scripts/build.sh
 
 ## 📥 Downloads
 
